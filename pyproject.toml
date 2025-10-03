@@ -1,0 +1,28 @@
+[project]
+name = "vscode-offline"
+version = "0.1.0"
+description = "Download and install vscode server for offline environments"
+readme = "README.md"
+authors = [
+    { name = "Chuck Fan", email = "fanck0605@qq.com" }
+]
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+vscode-offline = "vscode_offline:main"
+
+[build-system]
+requires = ["uv-build"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.13.3",
+]
+
+[tool.ruff.lint]
+select = [
+    "I", # isort
+    "F", # Pyflakes
+]
