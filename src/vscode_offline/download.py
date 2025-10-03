@@ -13,7 +13,7 @@ def _download_file(url: str, filename: str) -> None:
     with urlopen(url) as resp:
         content_encoding = resp.headers.get("Content-Encoding")
         if content_encoding in {"gzip", "deflate"}:
-            logger.info(f"Content encoding is {content_encoding}, using GzipFile")
+            logger.info(f"Content-Encoding is {content_encoding}, using GzipFile")
             reader = GzipFile(fileobj=resp)
         elif not content_encoding:
             reader = resp

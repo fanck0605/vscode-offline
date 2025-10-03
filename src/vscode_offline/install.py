@@ -6,8 +6,9 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from vscode_offline.loggers import logger
-from vscode_offline.paths import get_vscode_server_home
+from vscode_offline.utils import get_vscode_server_home
 
+# These extensions are excluded because they are not needed in a VSCode server.
 EXCLUDE_EXTENSIONS = {
     "ms-vscode-remote.remote-ssh",
     "ms-vscode-remote.remote-ssh-edit",
@@ -39,14 +40,14 @@ def install_vscode_extensions(vscode_bin: os.PathLike[str], vsix_dir: str) -> No
 
 def install_vscode_server(
     commit: str,
-    installer: str,
+    cli_installer: str,
     vscode_cli_bin: os.PathLike[str],
     target_platform: str,
     cli_os: str,
 ) -> None:
     cli_os_ = cli_os.replace("-", "_")
 
-    vscode_cli_tarball = Path(installer) / f"vscode_{cli_os_}_cli.tar.gz"
+    vscode_cli_tarball = Path(cli_installer) / f"vscode_{cli_os_}_cli.tar.gz"
     with TemporaryDirectory() as tmpdir:
         subprocess.check_call(["tar", "-xzf", vscode_cli_tarball, "-C", tmpdir])
         tmpfile = Path(tmpdir) / "code"
@@ -56,7 +57,9 @@ def install_vscode_server(
         os.rename(tmpfile, vscode_cli_bin)
     logger.info(f"Extracted vscode_{cli_os_}_cli.tar.gz to {vscode_cli_bin}")
 
-    vscode_server_tarball = Path(installer) / f"vscode-server-{target_platform}.tar.gz"
+    vscode_server_tarball = (
+        Path(cli_installer) / f"vscode-server-{target_platform}.tar.gz"
+    )
     vscode_server_home = get_vscode_server_home(commit)
     os.makedirs(vscode_server_home, exist_ok=True)
     subprocess.check_call(
