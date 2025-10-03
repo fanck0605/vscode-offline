@@ -39,6 +39,8 @@ vscode-offline install --installer ./vscode-offline-installer
 
 欢迎提交 Issue 和 PR 改进本项目。
 
-## 许可证
+## License
 
-[MIT License](./LICENSE)
+Copyright (c) 2025 Chuck Fan.
+
+Distributed under the terms of the  [MIT License](https://github.com/fanck0605/vscode-offline/blob/master/LICENSE).
