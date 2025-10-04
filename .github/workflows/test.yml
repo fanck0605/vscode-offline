@@ -1,4 +1,4 @@
-name: Lint
+name: Test
 
 on:
   push:
@@ -8,13 +8,16 @@ on:
       - "v*"
 
 jobs:
-  lint:
+  test:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - name: Checkout project
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Shallow clones should be disabled for a proper tag checkout
 
-      - name: Install uv
+      - name: Set up uv
         uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
@@ -30,3 +33,6 @@ jobs:
 
       - name: Format with ruff
         run: uv run ruff format --check
+
+      - name: Run tests with pytest
+        run: uv run pytest tests
