@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 from collections.abc import Set as AbstractSet
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from vscode_offline.loggers import logger
-from vscode_offline.utils import get_cli_platform, get_vscode_server_home
+from vscode_offline.utils import (
+    get_cli_platform,
+    get_vscode_cli_bin,
+    get_vscode_server_home,
+)
 
 # These extensions are excluded because they are not needed in a VS Code Server.
 SERVER_EXCLUDE_EXTENSIONS = frozenset(
@@ -64,26 +69,38 @@ def install_vscode_extensions(
         logger.info(f"Installed {vsix_file}")
 
 
+_code_version_output_pattern = re.compile(rb"\(commit ([0-9a-f]{40,})\)")
+
+
+def _extract_commit_from_code_version_output(code_version_output: bytes) -> str:
+    m = _code_version_output_pattern.search(code_version_output)
+    if not m:
+        raise ValueError("Cannot determine commit hash from code version")
+    return m.group(1).decode("utf-8")
+
+
 def install_vscode_server(
-    commit: str,
     server_installer: str,
-    vscode_cli_bin: os.PathLike[str],
     platform: str,
-) -> None:
+) -> os.PathLike[str]:
     cli_platform = get_cli_platform(platform)
     cli_platform_ = cli_platform.replace("-", "_")
 
-    vscode_cli_tarball = (
-        Path(server_installer) / f"vscode_cli_{cli_platform_}_cli.tar.gz"
-    )
+    code_cli_tarball = Path(server_installer) / f"vscode_cli_{cli_platform_}_cli.tar.gz"
     with TemporaryDirectory() as tmpdir:
-        subprocess.check_call(["tar", "-xzf", vscode_cli_tarball, "-C", tmpdir])
-        tmpfile = Path(tmpdir) / "code"
-        if os.path.exists(vscode_cli_bin):
-            os.remove(vscode_cli_bin)
-        os.makedirs(os.path.dirname(vscode_cli_bin), exist_ok=True)
-        os.rename(tmpfile, vscode_cli_bin)
-    logger.info(f"Extracted vscode_cli_{cli_platform_}_cli.tar.gz to {vscode_cli_bin}")
+        subprocess.check_call(["tar", "-xzf", code_cli_tarball, "-C", tmpdir])
+        tmp_code_cli = Path(tmpdir) / "code"
+        version_output = subprocess.check_output(
+            ["code", "--version"], executable=tmp_code_cli, cwd=tmpdir
+        )
+        commit = _extract_commit_from_code_version_output(version_output)
+        logger.info(f"Extracted commit from `code --version`: {commit}")
+        code_cli = get_vscode_cli_bin(commit)
+        if os.path.exists(code_cli):
+            os.remove(code_cli)
+        os.makedirs(os.path.dirname(code_cli), exist_ok=True)
+        os.rename(tmp_code_cli, code_cli)
+    logger.info(f"Extracted vscode_cli_{cli_platform_}_cli.tar.gz to {code_cli}")
 
     vscode_server_tarball = Path(server_installer) / f"vscode-server-{platform}.tar.gz"
     vscode_server_home = get_vscode_server_home(commit)
@@ -99,3 +116,4 @@ def install_vscode_server(
         ]
     )
     logger.info(f"Extracted vscode-server-{platform}.tar.gz to {vscode_server_home}")
+    return vscode_server_home

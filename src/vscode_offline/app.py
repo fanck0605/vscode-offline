@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
@@ -15,56 +14,51 @@ from vscode_offline.install import (
     install_vscode_extensions,
     install_vscode_server,
 )
-from vscode_offline.loggers import logger
 from vscode_offline.utils import (
+    get_default_code_version,
     get_host_platform,
-    get_vscode_cli_bin,
-    get_vscode_commit_from_code_version,
-    get_vscode_commit_from_server_installer,
     get_vscode_extensions_config,
-    get_vscode_server_home,
+    get_vscode_version_from_server_installer,
 )
 
 
 def cmd_download_server(args: Namespace) -> None:
-    if args.commit is None:
-        args.commit = get_vscode_commit_from_code_version()
-        if args.commit is None:
-            logger.info(
-                "Cannot determine commit from `code --version`, please specify --commit manually."
+    if args.code_version is None:
+        args.code_version = get_default_code_version()
+        if args.code_version is None:
+            raise ValueError(
+                "Cannot determine version from `code --version`, please specify `--version` when downloading."
             )
-            raise ValueError("Please specify --commit when installing.")
 
     download_vscode_server(
-        args.commit,
-        output=args.installer / f"server-{args.commit}",
-        target_platform=args.target_platform,
+        args.code_version,
+        output=args.installer / f"server-{args.code_version.replace(':', '-')}",
+        platform=args.platform,
     )
     extensions_config = Path(args.extensions_config).expanduser()
     download_vscode_extensions(
-        extensions_config, args.target_platform, args.installer / "extensions"
+        extensions_config,
+        target_platforms=[args.platform],
+        output=args.installer / "extensions",
     )
 
 
 def cmd_install_server(args: Namespace) -> None:
     host_platform = get_host_platform()
-    if args.commit is None:
+    if args.code_version is None:
         try:
-            args.commit = get_vscode_commit_from_server_installer(
+            args.code_version = get_vscode_version_from_server_installer(
                 args.installer, host_platform
             )
         except Exception as e:
             raise ValueError(
-                f"{e}, please specify `--commit` when installing."
+                f"{e}, please specify `--version` when installing."
             ) from None
 
-    install_vscode_server(
-        args.commit,
-        server_installer=args.installer / f"server-{args.commit}",
-        vscode_cli_bin=get_vscode_cli_bin(args.commit),
+    vscode_server_home = install_vscode_server(
+        server_installer=args.installer / f"server-{args.code_version}",
         platform=host_platform,
     )
-    vscode_server_home = get_vscode_server_home(args.commit)
     install_vscode_extensions(
         Path(vscode_server_home) / "bin/code-server",
         vsix_dir=args.installer / "extensions",
@@ -76,36 +70,65 @@ def cmd_install_server(args: Namespace) -> None:
 def cmd_download_extensions(args: Namespace) -> None:
     extensions_config = Path(args.extensions_config).expanduser()
     download_vscode_extensions(
-        extensions_config, args.target_platform, args.installer / "extensions"
+        extensions_config,
+        target_platforms=[args.platform],
+        output=args.installer / "extensions",
     )
 
 
 def cmd_install_extensions(args: Namespace) -> None:
     host_platform = get_host_platform()
     install_vscode_extensions(
-        os.fspath("code"),
+        args.code,
         vsix_dir=args.installer / "extensions",
         platform=host_platform,
     )
 
 
 def cmd_download_client(args: Namespace) -> None:
-    if args.commit is None:
-        args.commit = get_vscode_commit_from_code_version()
-        if args.commit is None:
-            logger.info(
-                "Cannot determine commit from `code --version`, please specify --commit manually."
+    if args.code_version is None:
+        args.code_version = get_default_code_version()
+        if args.code_version is None:
+            raise ValueError(
+                "Cannot determine version from `code --version`, please specify `--version` manually."
             )
-            raise ValueError("Please specify --commit when installing.")
 
     download_vscode_client(
-        args.commit,
-        output=args.installer / f"client-{args.commit}",
-        target_platform=args.target_platform,
+        args.code_version,
+        output=args.installer / f"client-{args.code_version.replace(':', '-')}",
+        platform=args.platform,
     )
     extensions_config = Path(args.extensions_config).expanduser()
     download_vscode_extensions(
-        extensions_config, args.target_platform, args.installer / "extensions"
+        extensions_config,
+        target_platforms=[args.platform],
+        output=args.installer / "extensions",
+    )
+
+
+def cmd_download_all(args: Namespace) -> None:
+    if args.code_version is None:
+        args.code_version = get_default_code_version()
+        if args.code_version is None:
+            raise ValueError(
+                "Cannot determine version from `code --version`, please specify `--version` manually."
+            )
+
+    download_vscode_server(
+        args.code_version,
+        output=args.installer / f"server-{args.code_version.replace(':', '-')}",
+        platform=args.server_platform,
+    )
+    download_vscode_client(
+        args.code_version,
+        output=args.installer / f"client-{args.code_version.replace(':', '-')}",
+        platform=args.client_platform,
+    )
+    extensions_config = Path(args.extensions_config).expanduser()
+    download_vscode_extensions(
+        extensions_config,
+        target_platforms=[args.server_platform, args.client_platform],
+        output=args.installer / "extensions",
     )
 
 
@@ -129,12 +152,12 @@ def make_argparser() -> ArgumentParser:
     )
     download_server_parser.set_defaults(func=cmd_download_server)
     download_server_parser.add_argument(
-        "--commit",
+        "--code-version",
         type=str,
-        help="The commit hash of the VS Code Server to download, must match the version of the VSCode client.",
+        help="The version of the VS Code Server to download, must match the version of the VS Code Client.",
     )
     download_server_parser.add_argument(
-        "--target-platform",
+        "--platform",
         type=str,
         required=True,
         help="The target platform of the VS Code Server to download.",
@@ -153,9 +176,9 @@ def make_argparser() -> ArgumentParser:
     )
     install_server_parser.set_defaults(func=cmd_install_server)
     install_server_parser.add_argument(
-        "--commit",
+        "--code-version",
         type=str,
-        help="The commit hash of the VS Code Server to install.",
+        help="The version of the VS Code Server to install.",
     )
 
     download_extensions_parser = subparsers.add_parser(
@@ -165,10 +188,10 @@ def make_argparser() -> ArgumentParser:
     )
     download_extensions_parser.set_defaults(func=cmd_download_extensions)
     download_extensions_parser.add_argument(
-        "--target-platform",
+        "--platform",
         type=str,
         required=True,
-        help="The target platform of the VSCode extensions to download.",
+        help="The target platform of the VS Code extensions to download.",
     )
     download_extensions_parser.add_argument(
         "--extensions-config",
@@ -179,11 +202,11 @@ def make_argparser() -> ArgumentParser:
 
     install_extensions_parser = subparsers.add_parser(
         "install-extensions",
-        help="Install VSCode extensions",
+        help="Install VS Code extensions",
         parents=[parent_parser],
     )
     install_extensions_parser.set_defaults(func=cmd_install_extensions)
-    download_extensions_parser.add_argument(
+    install_extensions_parser.add_argument(
         "--code",
         type=str,
         default="code",
@@ -197,17 +220,47 @@ def make_argparser() -> ArgumentParser:
     )
     download_client_parser.set_defaults(func=cmd_download_client)
     download_client_parser.add_argument(
-        "--commit",
+        "--code-version",
         type=str,
-        help="The commit hash of the VS Code to download, must match the version of the VSCode client.",
+        help="The version of the VS Code to download, must match the version of the VS Code Client.",
     )
     download_client_parser.add_argument(
-        "--target-platform",
+        "--platform",
         type=str,
         required=True,
         help="The target platform of the VS Code to download.",
     )
     download_client_parser.add_argument(
+        "--extensions-config",
+        type=Path,
+        default=get_vscode_extensions_config(),
+        help="Path to the extensions configuration file. Will search for extensions to download.",
+    )
+
+    download_all_parser = subparsers.add_parser(
+        "download-all",
+        help="Download VS Code server, client and extensions, all in one command",
+        parents=[parent_parser],
+    )
+    download_all_parser.set_defaults(func=cmd_download_all)
+    download_all_parser.add_argument(
+        "--code-version",
+        type=str,
+        help="The version of the VS Code to download, defaults to `code --version` at current environment.",
+    )
+    download_all_parser.add_argument(
+        "--server-platform",
+        type=str,
+        default="linux-x64",
+        help="The target platform of the VS Code Server to download, defaults to linux-x64.",
+    )
+    download_all_parser.add_argument(
+        "--client-platform",
+        type=str,
+        default="win32-x64",
+        help="The target platform of the VS Code to download, defaults to win32-x64.",
+    )
+    download_all_parser.add_argument(
         "--extensions-config",
         type=Path,
         default=get_vscode_extensions_config(),

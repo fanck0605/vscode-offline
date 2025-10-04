@@ -32,7 +32,7 @@ def get_vscode_extensions_config() -> os.PathLike[str]:
     return p  # default to this path
 
 
-def get_vscode_commit_from_server_installer(
+def get_vscode_version_from_server_installer(
     installer: os.PathLike[str], platform: str
 ) -> str:
     directories = list(
@@ -47,14 +47,16 @@ def get_vscode_commit_from_server_installer(
             f"No matching installer found in {installer} for platform {platform}"
         )
 
-    commit = directories[0].parent.name[len("server-") :]
-    logger.info(f"Getting commit from {platform} installer: {commit}")
-    return commit
+    version = directories[0].parent.name[len("server-") :]
+    logger.info(f"Getting version from {platform} installer: {version}")
+    return version
 
 
-def get_vscode_commit_from_code_version() -> str | None:
-    """Get the current VS Code commit hash by running `code --version`.
-    Returns None if `code` is not found or the output is unexpected.
+def get_default_code_version() -> str | None:
+    """Get the current VS Code version by running `code --version`.
+
+    Returns:
+        `None` if `code` is not found or the output is unexpected.
     """
     executable = shutil.which("code")
     if executable is None:
@@ -72,9 +74,10 @@ def get_vscode_commit_from_code_version() -> str | None:
 
     # The commit hash is usually on the second line
     commit = lines[1].strip().decode("utf-8")
-    logger.info(f"Getting commit from `code --version`: {commit}")
+    version = f"commit:{commit}"
+    logger.info(f"Getting version from `code --version`: {version}")
 
-    return commit
+    return version
 
 
 # Mapping from target platform to CLI OS and architecture used in download URLs

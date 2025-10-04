@@ -13,38 +13,40 @@ pip install -U vscode-offline
 1. 自动识别并下载所有 `.vsix` 文件（包括间接依赖）
 2. 一键安装 VS Code Server 以及所有插件
 
-## VS Code Server 安装
+## VS Code 离线安装
 
-（1）在联网环境安装好 VSCode 和你需要的插件。
+（1）在联网环境安装好 VS Code 和你需要的插件，如 [Remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh), [Python](https://marketplace.visualstudio.com/items?itemName=ms-python.python) 等。
 
-（2）执行如下命令，将会自动下载 VS Code Server，和目前安装的所有的插件
-
-> `--commit` 可以指定对应 VSCode 的 Commit，默认自动获取当前环境 VSCode 的 Commit。
->
-> 手动查看方式：*帮助* -> *关于* -> *Commit*，
+（2）执行如下命令，下载 VS Code 安装包，和目前安装的所有的插件
 
 ```shell
-vscode-offline download-server --target-platform linux-x64 --installer ./vscode-offline-installer
+vscode-offline download-all --installer ./vscode-offline-installer
 ```
 
-（3）复制 `./vscode-offline-installer` 到内网服务器
+（3）复制 `./vscode-offline-installer` 到内网 Windows 机器，安装 `client-<version>` 下的 VS Code，然后执行如下命令安装所有插件
+
+```shell
+vscode-offline install-extensions --installer ./vscode-offline-installer
+```
+
+（4）复制 `./vscode-offline-installer` 到内网 Linux 服务器，执行如下命令安装 VS Code Server 和所有插件
 
 ```shell
 vscode-offline install-server --installer ./vscode-offline-installer
 ```
 
-## VS Code 插件安装
+## 指定 VS Code 版本号
 
-（1）联网环境执行如下命令，将会自动下载 VSCode 目前安装的所有的插件
+如果你想下载或安装指定版本的 VS Code，可以先通过 `code --version` 获取当前版本，然后通过 --code-version 参数指定版本号，例如：
 
 ```shell
-vscode-offline download-extensions --target-platform win32-x64 --installer ./vscode-offline-installer
+vscode-offline download-all --code-version 1.104.3
 ```
 
-（2）复制 `./vscode-offline-installer` 到内网机器
+也支持使用 commit hash 作为版本号，例如：
 
 ```shell
-vscode-offline install-extensions --installer ./vscode-offline-installer
+vscode-offline download-all --code-version commit:385651c938df8a906869babee516bffd0ddb9829
 ```
 
 ## 贡献

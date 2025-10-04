@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from collections.abc import Sequence
 from gzip import GzipFile
 from io import DEFAULT_BUFFER_SIZE
 from pathlib import Path
@@ -94,7 +95,9 @@ def download_extension(
 
 
 def download_vscode_extensions(
-    extensions_config: os.PathLike[str], target_platform: str, output: str = "."
+    extensions_config: os.PathLike[str],
+    target_platforms: Sequence[str],
+    output: str = ".",
 ) -> None:
     logger.info(f"Reading extensions config from {extensions_config}")
     with open(extensions_config) as fp:
@@ -105,18 +108,42 @@ def download_vscode_extensions(
         identifier = extension["identifier"]
         publisher, name = identifier["id"].split(".")
         version = extension["version"]
-        try:
-            download_extension(publisher, name, version, target_platform, output=output)
-        except HTTPError as e:
-            if e.code != 404:
+
+        requires_fallback_download = False
+        for target_platform in target_platforms:
+            try:
+                download_extension(
+                    publisher, name, version, target_platform, output=output
+                )
+            except HTTPError as e:
+                if e.code == 404:
+                    requires_fallback_download = True
+                    continue
                 raise
+        if requires_fallback_download:
             download_extension(publisher, name, version, output=output)
 
 
-def download_vscode_server(
-    commit: str,
+def _download_vscode(
+    version: str,
     output: str,
-    target_platform: str,
+    platform: str,
+) -> None:
+    """Download VS Code for the given version and target platform."""
+
+    # filename is like
+    # "VS CodeSetup-x64-1.104.3.exe" for windows VS Code,
+    # "vscode-server-linux-x64.tar.gz" for linux VS Code Server,
+    # "vscode_cli_alpine_x64_cli.tar.gz" for linux VS Code CLI.
+    download_file(
+        f"https://update.code.visualstudio.com/{version}/{platform}/stable", output
+    )
+
+
+def download_vscode_server(
+    version: str,
+    output: str,
+    platform: str,
 ) -> None:
     """Download VS Code Server and CLI for the given commit and target platform.
 
@@ -125,29 +152,16 @@ def download_vscode_server(
         https://blog.csdn.net/qq_69668825/article/details/144224417
     """
     os.makedirs(output, exist_ok=True)
-    download_file(
-        f"https://update.code.visualstudio.com/commit:{commit}/server-{target_platform}/stable",
-        output,
-        f"vscode-server-{target_platform}.tar.gz",
-    )
-    cli_target_platform = get_cli_platform(target_platform)
-    cli_target_platform_ = cli_target_platform.replace("-", "_")
-    download_file(
-        f"https://update.code.visualstudio.com/commit:{commit}/cli-{cli_target_platform}/stable",
-        output,
-        f"vscode_cli_{cli_target_platform_}_cli.tar.gz",
-    )
+    _download_vscode(version, output, f"server-{platform}")
+    cli_platform = get_cli_platform(platform)
+    _download_vscode(version, output, f"cli-{cli_platform}")
 
 
 def download_vscode_client(
-    commit: str,
+    version: str,
     output: str,
-    target_platform: str,
+    platform: str,
 ) -> None:
-    """Download VS Code for the given commit and target platform."""
+    """Download VS Code Client for the given version and target platform."""
     os.makedirs(output, exist_ok=True)
-    download_file(
-        f"https://update.code.visualstudio.com/commit:{commit}/{target_platform}/stable",
-        output,
-        # filename is like "VSCodeSetup-x64-1.104.3.exe" for windows
-    )
+    _download_vscode(version, output, platform)
