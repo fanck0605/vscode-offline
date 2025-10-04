@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
+import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 from vscode_offline.loggers import logger
@@ -45,10 +47,20 @@ def get_vscode_commit_from_installer(installer: os.PathLike[str], platform: str)
 
 
 def get_vscode_commit_from_code_version() -> str | None:
-    res = subprocess.run(["code", "--version"], stdout=subprocess.PIPE)
-    if res.returncode != 0:
+    """Get the current VS Code commit hash by running `code --version`.
+    Returns None if `code` is not found or the output is unexpected.
+    """
+    executable = shutil.which("code")
+    if executable is None:
         return None
-    lines = res.stdout.splitlines()
+    proc = subprocess.run(
+        ["code", "--version"],
+        executable=executable,
+        stdout=subprocess.PIPE,
+    )
+    if proc.returncode != 0:
+        return None
+    lines = proc.stdout.splitlines()
     if len(lines) < 2:
         return None  # Unexpected output
 
@@ -82,6 +94,11 @@ def get_cli_os_arch(platform: str) -> str:
 
 def get_host_platform() -> str:
     """Get the host platform in the format used by VS Code Server install."""
+    if os.name == "nt":
+        if "amd64" in sys.version.lower():
+            return "win32-x64"
+        raise ValueError(f"Unsupported host platform: {os.name}-{sys.version}")
+
     (osname, _, _, _, machine) = os.uname()
 
     if osname.lower() == "linux":
