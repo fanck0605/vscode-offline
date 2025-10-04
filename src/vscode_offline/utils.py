@@ -110,7 +110,12 @@ def get_host_platform() -> str:
     raise ValueError(f"Unsupported host platform: {osname}-{machine}")
 
 
-def get_filename_from_header(headers: Mapping[str, str]) -> str | None:
+def get_filename_from_headers(headers: Mapping[str, str]) -> str | None:
+    """Get the filename from HTTP headers.
+
+    Args:
+        headers: The HTTP headers.
+    """
     content_disposition = headers.get("Content-Disposition")
     header_str = ""
     if content_type := headers.get("Content-Type"):

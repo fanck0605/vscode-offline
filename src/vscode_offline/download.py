@@ -3,14 +3,13 @@ from __future__ import annotations
 import json
 import os
 from gzip import GzipFile
+from io import DEFAULT_BUFFER_SIZE
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
 from vscode_offline.loggers import logger
-from vscode_offline.utils import get_cli_platform, get_filename_from_header
-
-_CHUCK_SIZE = 4 * 1024 * 1024  # 4MiB
+from vscode_offline.utils import get_cli_platform, get_filename_from_headers
 
 
 def _download_file(
@@ -18,13 +17,6 @@ def _download_file(
     directory: str | os.PathLike[str],
     filename: str | None = None,
 ) -> os.PathLike[str]:
-    file_path: Path | None = None
-    if filename:
-        file_path = Path(directory).joinpath(filename)
-        if file_path.exists():
-            logger.info(f"File {file_path} already exists, skipping download.")
-            return file_path
-
     with urlopen(url) as resp:
         content_encoding = resp.headers.get("Content-Encoding")
         if content_encoding in {"gzip", "deflate"}:
@@ -35,10 +27,15 @@ def _download_file(
         else:
             raise ValueError(f"Unsupported Content-Encoding: {content_encoding}")
 
-        if file_path is None:
-            filename = get_filename_from_header(resp.headers)
+        if filename:
+            file_path = Path(directory).joinpath(filename)
+        else:
+            filename = get_filename_from_headers(resp.headers)
             if not filename:
-                raise ValueError("Cannot get filename from Content-Disposition header")
+                raise ValueError(
+                    "Cannot get filename from HTTP headers, please specify argument `filename`."
+                )
+            logger.info(f"Get filename `{filename}` from HTTP headers.")
             file_path = Path(directory).joinpath(filename)
             if file_path.exists():
                 logger.info(f"File {file_path} already exists, skipping download.")
@@ -47,7 +44,7 @@ def _download_file(
         tmp_file_path = Path(directory).joinpath(f"{filename}.tmp")
         with reader, tmp_file_path.open("wb") as fp:
             while True:
-                chunk = reader.read(_CHUCK_SIZE)
+                chunk = reader.read(DEFAULT_BUFFER_SIZE)
                 if not chunk:
                     break
                 fp.write(chunk)
@@ -55,6 +52,8 @@ def _download_file(
         if os.path.exists(file_path):
             os.remove(file_path)
         os.rename(tmp_file_path, file_path)
+
+        logger.info(f"Saved to {file_path} .")
         return file_path
 
 
@@ -63,16 +62,21 @@ def download_file(
     directory: str | os.PathLike[str],
     filename: str | None = None,
 ) -> None:
-    logger.info(f"Downloading {url}")
+    if filename:
+        file_path = Path(directory).joinpath(filename)
+        if file_path.exists():
+            logger.info(f"File {file_path} already exists, skipping download.")
+            return
+
+    logger.info(f"Downloading {url} ...")
     for i in range(3):
         try:
-            file_path = _download_file(url, directory, filename)
-            logger.info(f"Saved to {file_path}")
+            _download_file(url, directory, filename)
             break
         except Exception as e:
             if isinstance(e, HTTPError) and e.code == 404:
                 raise
-            logger.info(f"Attempt {i + 1} failed: {e}")
+            logger.info(f"Attempt {i + 1} times failed: {e}")
 
 
 def download_extension(
@@ -85,7 +89,7 @@ def download_extension(
     url = f"https://marketplace.visualstudio.com/_apis/public/gallery/publishers/{publisher}/vsextensions/{name}/{version}/vspackage"
     if platform:
         url = f"{url}?targetPlatform={platform}"
-    filename = f"{publisher}.{name}-{version}{'@{platform}' if platform else ''}.vsix"
+    filename = f"{publisher}.{name}-{version}{f'@{platform}' if platform else ''}.vsix"
     download_file(url, output, filename)
 
 
