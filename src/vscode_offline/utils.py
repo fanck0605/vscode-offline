@@ -3,25 +3,26 @@ from __future__ import annotations
 import os
 import subprocess
 from pathlib import Path
+
 from vscode_offline.loggers import logger
 
-VSCODE_DATA = Path("~/.vscode").expanduser()
-VSCODE_SERVER_DATA = Path("~/.vscode-server").expanduser()
+_vscode_data = Path("~/.vscode").expanduser()
+_vscode_server_data = Path("~/.vscode-server").expanduser()
 
 
 def get_vscode_cli_bin(commit: str) -> os.PathLike[str]:
-    return VSCODE_SERVER_DATA / f"code-{commit}"
+    return _vscode_server_data / f"code-{commit}"
 
 
 def get_vscode_server_home(commit: str) -> os.PathLike[str]:
-    return VSCODE_SERVER_DATA / f"cli/servers/Stable-{commit}/server"
+    return _vscode_server_data / f"cli/servers/Stable-{commit}/server"
 
 
 def get_vscode_extensions_config() -> os.PathLike[str]:
-    p = VSCODE_DATA / "extensions/extensions.json"
+    p = _vscode_data / "extensions/extensions.json"
     if p.exists():
         return p
-    s = VSCODE_SERVER_DATA / "extensions/extensions.json"
+    s = _vscode_server_data / "extensions/extensions.json"
     if s.exists():
         return s
     return p  # default to this path
@@ -54,3 +55,12 @@ def get_target_platform_from_installer(cli_installer: str) -> str | None:
     if len(directories) == 1:
         return directories[0].name[len("vscode-server-") : -len(".tar.gz")]
     return None
+
+
+_cli_os_mapping = {
+    "linux-x64": "alpine-x64",
+}
+
+
+def get_cli_os(target_platform: str) -> str:
+    return _cli_os_mapping[target_platform]

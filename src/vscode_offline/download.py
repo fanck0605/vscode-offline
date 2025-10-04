@@ -7,6 +7,7 @@ from urllib.error import HTTPError
 from urllib.request import urlopen
 
 from vscode_offline.loggers import logger
+from vscode_offline.utils import get_cli_os
 
 
 def _download_file(url: str, filename: str) -> None:
@@ -32,7 +33,7 @@ def download_file(
     url: str,
     filename: str,
 ) -> None:
-    logger.info(f"Downloading {filename}")
+    logger.info(f"Downloading {url}")
     tmp_filename = f"{filename}.tmp"
 
     for i in range(3):
@@ -90,17 +91,20 @@ def download_vscode_extensions(
 
 
 def download_vscode_server(
-    commit: str, output: str, target_platform: str, cli_os: str
+    commit: str,
+    output: str,
+    target_platform: str,
 ) -> None:
     os.makedirs(output, exist_ok=True)
     download_file(
-        f"https://vscode.download.prss.microsoft.com/dbazure/download/stable/{commit}/vscode-server-linux-x64.tar.gz",
-        f"{output}/vscode-server-linux-x64.tar.gz",
+        f"https://update.code.visualstudio.com/commit:{commit}/server-{target_platform}/stable",
+        f"{output}/vscode-server-{target_platform}.tar.gz",
     )
     logger.info("============================================")
+    cli_os = get_cli_os(target_platform)
     cli_os_ = cli_os.replace("-", "_")
     download_file(
-        f"https://vscode.download.prss.microsoft.com/dbazure/download/stable/{commit}/vscode_{cli_os_}_cli.tar.gz",
-        f"{output}/vscode_{cli_os_}_cli.tar.gz",
+        f"https://update.code.visualstudio.com/commit:{commit}/cli-{cli_os}/stable",
+        f"{output}/vscode_cli_{cli_os_}_cli.tar.gz",
     )
     logger.info("============================================")

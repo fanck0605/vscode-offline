@@ -16,10 +16,6 @@ from vscode_offline.utils import (
     get_vscode_server_home,
 )
 
-cli_os_mapping = {
-    "linux-x64": "cli-alpine-x64",
-}
-
 
 def download(args: Namespace) -> None:
     if args.commit is None:
@@ -34,7 +30,6 @@ def download(args: Namespace) -> None:
         args.commit,
         output=args.installer / f"cli-{args.commit}",
         target_platform=args.target_platform,
-        cli_os=cli_os_mapping[args.target_platform],
     )
     extensions_config = Path(args.extensions_config).expanduser()
     download_vscode_extensions(
@@ -66,7 +61,6 @@ def install(args: Namespace) -> None:
         cli_installer=args.installer / f"cli-{args.commit}",
         vscode_cli_bin=get_vscode_cli_bin(args.commit),
         target_platform=args.target_platform,
-        cli_os=cli_os_mapping[args.target_platform],
     )
     vscode_server_home = get_vscode_server_home(args.commit)
     install_vscode_extensions(
