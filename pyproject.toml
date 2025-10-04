@@ -37,6 +37,7 @@ build-backend = "uv_build"
 
 [dependency-groups]
 dev = [
+    "lefthook>=1.13.6",
     "ruff>=0.13.3",
 ]
 

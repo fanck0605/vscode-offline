@@ -1,0 +1,11 @@
+lefthook: uv run lefthook
+
+pre-commit:
+  jobs:
+    - run: ruff check --fix {staged_files}
+      glob: "*.py"
+      stage_fixed: true
+
+    - run: ruff format {staged_files}
+      glob: "*.py"
+      stage_fixed: true
