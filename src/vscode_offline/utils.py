@@ -30,8 +30,12 @@ def get_vscode_extensions_config() -> os.PathLike[str]:
     return p  # default to this path
 
 
-def get_vscode_commit_from_installer(installer: os.PathLike[str], platform: str) -> str:
-    directories = list(Path(installer).glob(f"cli-*/vscode-server-{platform}.tar.gz"))
+def get_vscode_commit_from_server_installer(
+    installer: os.PathLike[str], platform: str
+) -> str:
+    directories = list(
+        Path(installer).glob(f"server-*/vscode-server-{platform}.tar.gz")
+    )
     if len(directories) > 1:
         raise ValueError(
             f"Multiple matching installers found in {installer} for platform {platform}"
@@ -41,7 +45,7 @@ def get_vscode_commit_from_installer(installer: os.PathLike[str], platform: str)
             f"No matching installer found in {installer} for platform {platform}"
         )
 
-    commit = directories[0].parent.name[len("cli-") :]
+    commit = directories[0].parent.name[len("server-") :]
     logger.info(f"Getting commit from {platform} installer: {commit}")
     return commit
 

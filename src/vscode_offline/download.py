@@ -9,6 +9,8 @@ from urllib.request import urlopen
 from vscode_offline.loggers import logger
 from vscode_offline.utils import get_cli_os_arch
 
+_CHUCK_SIZE = 4 * 1024 * 1024  # 4MiB
+
 
 def _download_file(url: str, filename: str) -> None:
     with urlopen(url) as resp:
@@ -23,7 +25,7 @@ def _download_file(url: str, filename: str) -> None:
 
         with reader, open(filename, "wb") as fp:
             while True:
-                chunk = reader.read(1024)
+                chunk = reader.read(_CHUCK_SIZE)
                 if not chunk:
                     break
                 fp.write(chunk)

@@ -19,7 +19,7 @@ from vscode_offline.utils import (
     get_host_platform,
     get_vscode_cli_bin,
     get_vscode_commit_from_code_version,
-    get_vscode_commit_from_installer,
+    get_vscode_commit_from_server_installer,
     get_vscode_extensions_config,
     get_vscode_server_home,
 )
@@ -36,7 +36,7 @@ def cmd_download_server(args: Namespace) -> None:
 
     download_vscode_server(
         args.commit,
-        output=args.installer / f"cli-{args.commit}",
+        output=args.installer / f"server-{args.commit}",
         target_platform=args.target_platform,
     )
     extensions_config = Path(args.extensions_config).expanduser()
@@ -49,7 +49,7 @@ def cmd_install_server(args: Namespace) -> None:
     host_platform = get_host_platform()
     if args.commit is None:
         try:
-            args.commit = get_vscode_commit_from_installer(
+            args.commit = get_vscode_commit_from_server_installer(
                 args.installer, host_platform
             )
         except Exception as e:
@@ -59,7 +59,7 @@ def cmd_install_server(args: Namespace) -> None:
 
     install_vscode_server(
         args.commit,
-        cli_installer=args.installer / f"cli-{args.commit}",
+        cli_installer=args.installer / f"server-{args.commit}",
         vscode_cli_bin=get_vscode_cli_bin(args.commit),
         platform=host_platform,
     )
