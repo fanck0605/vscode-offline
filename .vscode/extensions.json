@@ -4,6 +4,7 @@
     "charliermarsh.ruff",
     "editorconfig.editorconfig",
     "redhat.vscode-yaml",
-    "github.vscode-github-actions"
+    "github.vscode-github-actions",
+    "tamasfe.even-better-toml"
   ]
 }
