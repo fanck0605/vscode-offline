@@ -72,14 +72,7 @@ def get_vscode_commit_from_code_version() -> str | None:
     commit = lines[1].strip().decode("utf-8")
     logger.info(f"Getting commit from `code --version`: {commit}")
 
-    return lines[1].strip().decode("utf-8")
-
-
-def get_target_platform_from_installer(cli_installer: str) -> str | None:
-    directories = list(Path(cli_installer).glob("vscode-server-*.tar.gz"))
-    if len(directories) == 1:
-        return directories[0].name[len("vscode-server-") : -len(".tar.gz")]
-    return None
+    return commit
 
 
 # Mapping from target platform to CLI OS and architecture used in download URLs
@@ -97,7 +90,7 @@ def get_cli_os_arch(platform: str) -> str:
 
 
 def get_host_platform() -> str:
-    """Get the host platform in the format used by VS Code Server install."""
+    """Get the host platform in the format used by VS Code install."""
     if os.name == "nt":
         if "amd64" in sys.version.lower():
             return "win32-x64"
