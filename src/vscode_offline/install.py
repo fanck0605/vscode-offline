@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import subprocess
 from collections.abc import Set as AbstractSet
 from pathlib import Path
@@ -44,11 +45,12 @@ def get_extension_target_platform(filename: str) -> str | None:
 
 
 def install_vscode_extensions(
-    vscode_bin: str | os.PathLike[str],
+    code: str | os.PathLike[str],
     vsix_dir: str,
     platform: str,
     exclude: AbstractSet[str] = frozenset(),
 ) -> None:
+    code_executable = shutil.which(code)
     for vsix_file in Path(vsix_dir).glob("*.vsix"):
         extension_identifier = get_extension_identifier(vsix_file.name)
         if extension_identifier in exclude:
@@ -65,7 +67,10 @@ def install_vscode_extensions(
             )
             continue
         logger.info(f"Installing {vsix_file}")
-        subprocess.check_call([vscode_bin, "--install-extension", vsix_file, "--force"])
+        subprocess.check_call(
+            [code, "--install-extension", vsix_file, "--force"],
+            executable=code_executable,
+        )
         logger.info(f"Installed {vsix_file}")
 
 
