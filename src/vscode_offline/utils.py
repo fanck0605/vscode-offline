@@ -81,7 +81,7 @@ def get_cli_os_arch(platform: str) -> str:
 
 
 def get_host_platform() -> str:
-    """Get the host platform in the format used by VSCode server install."""
+    """Get the host platform in the format used by VS Code Server install."""
     (osname, _, _, _, machine) = os.uname()
 
     if osname.lower() == "linux":

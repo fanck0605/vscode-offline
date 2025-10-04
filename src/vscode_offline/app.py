@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import logging
+import os
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
-from vscode_offline.download import download_vscode_extensions, download_vscode_server
-from vscode_offline.install import install_vscode_extensions, install_vscode_server
+from vscode_offline.download import (
+    download_vscode_extensions,
+    download_vscode_server,
+)
+from vscode_offline.install import (
+    SERVER_EXCLUDE_EXTENSIONS,
+    install_vscode_extensions,
+    install_vscode_server,
+)
 from vscode_offline.loggers import logger
 from vscode_offline.utils import (
     get_host_platform,
@@ -17,7 +25,7 @@ from vscode_offline.utils import (
 )
 
 
-def download(args: Namespace) -> None:
+def cmd_download_server(args: Namespace) -> None:
     if args.commit is None:
         args.commit = get_vscode_commit_from_code_version()
         if args.commit is None:
@@ -37,9 +45,8 @@ def download(args: Namespace) -> None:
     )
 
 
-def install(args: Namespace) -> None:
+def cmd_install_server(args: Namespace) -> None:
     host_platform = get_host_platform()
-
     if args.commit is None:
         try:
             args.commit = get_vscode_commit_from_installer(
@@ -60,6 +67,24 @@ def install(args: Namespace) -> None:
     install_vscode_extensions(
         Path(vscode_server_home) / "bin/code-server",
         vsix_dir=args.installer / "extensions",
+        platform=host_platform,
+        exclude=SERVER_EXCLUDE_EXTENSIONS,
+    )
+
+
+def cmd_download_extensions(args: Namespace) -> None:
+    extensions_config = Path(args.extensions_config).expanduser()
+    download_vscode_extensions(
+        extensions_config, args.target_platform, args.installer / "extensions"
+    )
+
+
+def cmd_install_extensions(args: Namespace) -> None:
+    host_platform = get_host_platform()
+    install_vscode_extensions(
+        os.fspath("code"),
+        vsix_dir=args.installer / "extensions",
+        platform=host_platform,
     )
 
 
@@ -76,40 +101,72 @@ def make_argparser() -> ArgumentParser:
     parser = ArgumentParser()
     subparsers = parser.add_subparsers(required=True)
 
-    download_parser = subparsers.add_parser(
-        "download",
-        help="Download VSCode server and extensions",
+    download_server_parser = subparsers.add_parser(
+        "download-server",
+        help="Download VS Code Server and extensions",
         parents=[parent_parser],
     )
-    download_parser.set_defaults(func=download)
-    download_parser.add_argument(
+    download_server_parser.set_defaults(func=cmd_download_server)
+    download_server_parser.add_argument(
         "--commit",
         type=str,
-        help="The commit hash of the VSCode server to download, must match the version of the VSCode client.",
+        help="The commit hash of the VS Code Server to download, must match the version of the VSCode client.",
     )
-    download_parser.add_argument(
+    download_server_parser.add_argument(
         "--target-platform",
         type=str,
         required=True,
-        help="The target platform of the VSCode server to download.",
+        help="The target platform of the VS Code Server to download.",
     )
-    download_parser.add_argument(
+    download_server_parser.add_argument(
         "--extensions-config",
         type=Path,
         default=get_vscode_extensions_config(),
         help="Path to the extensions configuration file. Will search for extensions to download.",
     )
 
-    install_parser = subparsers.add_parser(
-        "install",
-        help="Install VSCode server and extensions",
+    install_server_parser = subparsers.add_parser(
+        "install-server",
+        help="Install VS Code Server and extensions",
         parents=[parent_parser],
     )
-    install_parser.set_defaults(func=install)
-    install_parser.add_argument(
+    install_server_parser.set_defaults(func=cmd_install_server)
+    install_server_parser.add_argument(
         "--commit",
         type=str,
-        help="The commit hash of the VSCode server to install.",
+        help="The commit hash of the VS Code Server to install.",
+    )
+
+    download_extensions_parser = subparsers.add_parser(
+        "download-extensions",
+        help="Download VS Code Server and extensions",
+        parents=[parent_parser],
+    )
+    download_extensions_parser.set_defaults(func=cmd_download_extensions)
+    download_extensions_parser.add_argument(
+        "--target-platform",
+        type=str,
+        required=True,
+        help="The target platform of the VSCode extensions to download.",
+    )
+    download_extensions_parser.add_argument(
+        "--extensions-config",
+        type=Path,
+        default=get_vscode_extensions_config(),
+        help="Path to the extensions configuration file. Will search for extensions to download.",
+    )
+
+    install_extensions_parser = subparsers.add_parser(
+        "install-extensions",
+        help="Install VSCode extensions",
+        parents=[parent_parser],
+    )
+    install_extensions_parser.set_defaults(func=cmd_install_extensions)
+    download_extensions_parser.add_argument(
+        "--code",
+        type=str,
+        default="code",
+        help="Path to the `code` binary.",
     )
 
     return parser

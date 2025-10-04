@@ -2,22 +2,25 @@ from __future__ import annotations
 
 import os
 import subprocess
+from collections.abc import Set as AbstractSet
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from vscode_offline.loggers import logger
 from vscode_offline.utils import get_cli_os_arch, get_vscode_server_home
 
-# These extensions are excluded because they are not needed in a VSCode server.
-EXCLUDE_EXTENSIONS = {
-    "ms-vscode-remote.remote-ssh",
-    "ms-vscode-remote.remote-ssh-edit",
-    "ms-vscode-remote.remote-wsl",
-    "ms-vscode-remote.remote-containers",
-    "ms-vscode.remote-explorer",
-    "ms-vscode-remote.vscode-remote-extensionpack",
-    "ms-vscode.remote-server",
-}
+# These extensions are excluded because they are not needed in a VS Code Server.
+SERVER_EXCLUDE_EXTENSIONS = frozenset(
+    [
+        "ms-vscode-remote.remote-ssh",
+        "ms-vscode-remote.remote-ssh-edit",
+        "ms-vscode-remote.remote-wsl",
+        "ms-vscode-remote.remote-containers",
+        "ms-vscode.remote-explorer",
+        "ms-vscode-remote.vscode-remote-extensionpack",
+        "ms-vscode.remote-server",
+    ]
+)
 
 
 def get_extension_identifier(filename: str) -> str:
@@ -27,11 +30,34 @@ def get_extension_identifier(filename: str) -> str:
     return extension_identifier
 
 
-def install_vscode_extensions(vscode_bin: os.PathLike[str], vsix_dir: str) -> None:
+def get_extension_target_platform(filename: str) -> str | None:
+    filename = os.path.splitext(filename)[0]
+    parts = filename.rsplit("@", maxsplit=1)
+    if len(parts) != 2:
+        return None
+    return parts[1]
+
+
+def install_vscode_extensions(
+    vscode_bin: str | os.PathLike[str],
+    vsix_dir: str,
+    platform: str,
+    exclude: AbstractSet[str] = frozenset(),
+) -> None:
     for vsix_file in Path(vsix_dir).glob("*.vsix"):
         extension_identifier = get_extension_identifier(vsix_file.name)
-        if extension_identifier in EXCLUDE_EXTENSIONS:
+        if extension_identifier in exclude:
             logger.info(f"Skipping excluded extension {extension_identifier}")
+            continue
+        # Skip extensions that are not for the current platform
+        extension_target_platform = get_extension_target_platform(vsix_file.name)
+        if (
+            extension_target_platform is not None
+            and extension_target_platform != platform
+        ):
+            logger.info(
+                f"Skipping extension {extension_identifier} for platform {extension_target_platform}"
+            )
             continue
         logger.info(f"Installing {vsix_file}")
         subprocess.check_call([vscode_bin, "--install-extension", vsix_file, "--force"])

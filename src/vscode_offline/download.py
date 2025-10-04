@@ -33,6 +33,10 @@ def download_file(
     url: str,
     filename: str,
 ) -> None:
+    if os.path.exists(filename):
+        logger.info(f"File {filename} already exists, skipping download.")
+        return
+
     logger.info(f"Downloading {url}")
     tmp_filename = f"{filename}.tmp"
 
@@ -87,7 +91,6 @@ def download_vscode_extensions(
             if e.code != 404:
                 raise
             download_extension(publisher, name, version, output=output)
-        logger.info("============================================")
 
 
 def download_vscode_server(
@@ -95,7 +98,7 @@ def download_vscode_server(
     output: str,
     target_platform: str,
 ) -> None:
-    """Download VSCode server and CLI for the given commit and target platform.
+    """Download VS Code Server and CLI for the given commit and target platform.
 
     See Also:
         https://www.cnblogs.com/michaelcjl/p/18262833
@@ -106,11 +109,9 @@ def download_vscode_server(
         f"https://update.code.visualstudio.com/commit:{commit}/server-{target_platform}/stable",
         f"{output}/vscode-server-{target_platform}.tar.gz",
     )
-    logger.info("============================================")
-    cli_os = get_cli_os_arch(target_platform)
-    cli_os_ = cli_os.replace("-", "_")
+    target_os_arch = get_cli_os_arch(target_platform)
+    target_os_arch_ = target_os_arch.replace("-", "_")
     download_file(
-        f"https://update.code.visualstudio.com/commit:{commit}/cli-{cli_os}/stable",
-        f"{output}/vscode_cli_{cli_os_}_cli.tar.gz",
+        f"https://update.code.visualstudio.com/commit:{commit}/cli-{target_os_arch}/stable",
+        f"{output}/vscode_cli_{target_os_arch_}_cli.tar.gz",
     )
-    logger.info("============================================")

@@ -1,7 +1,7 @@
 [project]
 name = "vscode-offline"
-version = "0.1.1"
-description = "Download and install vscode server for offline environments"
+version = "0.1.2"
+description = "Download and install VS Code Server for offline environments"
 readme = "README.md"
 authors = [
     { name = "Chuck Fan", email = "fanck0605@qq.com" }
