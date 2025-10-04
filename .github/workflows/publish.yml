@@ -12,6 +12,7 @@ jobs:
       # Configure a constant location for the uv cache
       UV_CACHE_DIR: /tmp/.uv-cache
     permissions:
+      contents: write  # IMPORTANT: this permission is mandatory for uploading release assets
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
       - uses: actions/checkout@v5
@@ -27,5 +28,11 @@ jobs:
             uv-${{ runner.os }}
       - name: Build distribution
         run: uv build
-      - name: Publish
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/vscode_offline-*.tar.gz
+            dist/vscode_offline-*.whl
+      - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@v1.13.0
