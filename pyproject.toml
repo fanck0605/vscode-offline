@@ -1,11 +1,13 @@
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
 [project]
 name = "vscode-offline"
-version = "0.1.3"
+dynamic = ["version"]
 description = "Download and install VS Code Server for offline environments"
 readme = "README.md"
-authors = [
-    { name = "Chuck Fan", email = "fanck0605@qq.com" }
-]
+authors = [{ name = "Chuck Fan", email = "fanck0605@qq.com" }]
 requires-python = ">=3.9"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -31,10 +33,6 @@ Homepage = "https://github.com/fanck0605/vscode-offline"
 [project.scripts]
 vscode-offline = "vscode_offline:main"
 
-[build-system]
-requires = ["uv-build"]
-build-backend = "uv_build"
-
 [dependency-groups]
 dev = [
     "lefthook>=1.13.6",
@@ -44,8 +42,12 @@ dev = [
     "ruff>=0.13.3",
 ]
 
+[tool.hatch.version]
+source = "vcs"
+
 [tool.ruff.lint]
 select = [
-    "I", # isort
-    "F", # Pyflakes
+    "ANN", # flake8-annotations
+    "I",   # isort
+    "F",   # Pyflakes
 ]

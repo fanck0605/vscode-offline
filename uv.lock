@@ -314,7 +314,6 @@ wheels = [
 
 [[package]]
 name = "vscode-offline"
-version = "0.1.3"
 source = { editable = "." }
 
 [package.dev-dependencies]
