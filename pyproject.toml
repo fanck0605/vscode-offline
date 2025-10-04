@@ -38,6 +38,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "lefthook>=1.13.6",
+    "pyright>=1.1.406",
     "ruff>=0.13.3",
 ]
 

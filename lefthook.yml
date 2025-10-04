@@ -6,6 +6,10 @@ pre-commit:
       glob: "*.py"
       stage_fixed: true
 
+    - run: pyright {staged_files}
+      glob: "*.py"
+      stage_fixed: true
+
     - run: ruff format {staged_files}
       glob: "*.py"
       stage_fixed: true
