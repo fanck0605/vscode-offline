@@ -3,16 +3,28 @@ from __future__ import annotations
 import json
 import os
 from gzip import GzipFile
+from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
 from vscode_offline.loggers import logger
-from vscode_offline.utils import get_cli_os_arch
+from vscode_offline.utils import get_cli_platform, get_filename_from_header
 
 _CHUCK_SIZE = 4 * 1024 * 1024  # 4MiB
 
 
-def _download_file(url: str, filename: str) -> None:
+def _download_file(
+    url: str,
+    directory: str | os.PathLike[str],
+    filename: str | None = None,
+) -> os.PathLike[str]:
+    file_path: Path | None = None
+    if filename:
+        file_path = Path(directory).joinpath(filename)
+        if file_path.exists():
+            logger.info(f"File {file_path} already exists, skipping download.")
+            return file_path
+
     with urlopen(url) as resp:
         content_encoding = resp.headers.get("Content-Encoding")
         if content_encoding in {"gzip", "deflate"}:
@@ -23,39 +35,44 @@ def _download_file(url: str, filename: str) -> None:
         else:
             raise ValueError(f"Unsupported Content-Encoding: {content_encoding}")
 
-        with reader, open(filename, "wb") as fp:
+        if file_path is None:
+            filename = get_filename_from_header(resp.headers)
+            if not filename:
+                raise ValueError("Cannot get filename from Content-Disposition header")
+            file_path = Path(directory).joinpath(filename)
+            if file_path.exists():
+                logger.info(f"File {file_path} already exists, skipping download.")
+                return file_path
+
+        tmp_file_path = Path(directory).joinpath(f"{filename}.tmp")
+        with reader, tmp_file_path.open("wb") as fp:
             while True:
                 chunk = reader.read(_CHUCK_SIZE)
                 if not chunk:
                     break
                 fp.write(chunk)
 
+        if os.path.exists(file_path):
+            os.remove(file_path)
+        os.rename(tmp_file_path, file_path)
+        return file_path
+
 
 def download_file(
     url: str,
-    filename: str,
+    directory: str | os.PathLike[str],
+    filename: str | None = None,
 ) -> None:
-    if os.path.exists(filename):
-        logger.info(f"File {filename} already exists, skipping download.")
-        return
-
     logger.info(f"Downloading {url}")
-    tmp_filename = f"{filename}.tmp"
-
     for i in range(3):
         try:
-            _download_file(url, tmp_filename)
+            file_path = _download_file(url, directory, filename)
+            logger.info(f"Saved to {file_path}")
             break
         except Exception as e:
             if isinstance(e, HTTPError) and e.code == 404:
                 raise
             logger.info(f"Attempt {i + 1} failed: {e}")
-
-    if os.path.exists(filename):
-        os.remove(filename)
-    os.rename(tmp_filename, filename)
-
-    logger.info(f"Saved to {filename}")
 
 
 def download_extension(
@@ -68,11 +85,8 @@ def download_extension(
     url = f"https://marketplace.visualstudio.com/_apis/public/gallery/publishers/{publisher}/vsextensions/{name}/{version}/vspackage"
     if platform:
         url = f"{url}?targetPlatform={platform}"
-    filename = f"{publisher}.{name}-{version}"
-    if platform:
-        filename = f"{filename}@{platform}"
-    filename = f"{filename}.vsix"
-    download_file(url, f"{output}/{filename}")
+    filename = f"{publisher}.{name}-{version}{'@{platform}' if platform else ''}.vsix"
+    download_file(url, output, filename)
 
 
 def download_vscode_extensions(
@@ -109,11 +123,27 @@ def download_vscode_server(
     os.makedirs(output, exist_ok=True)
     download_file(
         f"https://update.code.visualstudio.com/commit:{commit}/server-{target_platform}/stable",
-        f"{output}/vscode-server-{target_platform}.tar.gz",
+        output,
+        f"vscode-server-{target_platform}.tar.gz",
     )
-    target_os_arch = get_cli_os_arch(target_platform)
-    target_os_arch_ = target_os_arch.replace("-", "_")
+    cli_target_platform = get_cli_platform(target_platform)
+    cli_target_platform_ = cli_target_platform.replace("-", "_")
     download_file(
-        f"https://update.code.visualstudio.com/commit:{commit}/cli-{target_os_arch}/stable",
-        f"{output}/vscode_cli_{target_os_arch_}_cli.tar.gz",
+        f"https://update.code.visualstudio.com/commit:{commit}/cli-{cli_target_platform}/stable",
+        output,
+        f"vscode_cli_{cli_target_platform_}_cli.tar.gz",
+    )
+
+
+def download_vscode_client(
+    commit: str,
+    output: str,
+    target_platform: str,
+) -> None:
+    """Download VS Code for the given commit and target platform."""
+    os.makedirs(output, exist_ok=True)
+    download_file(
+        f"https://update.code.visualstudio.com/commit:{commit}/{target_platform}/stable",
+        output,
+        # filename is like "VSCodeSetup-x64-1.104.3.exe" for windows
     )

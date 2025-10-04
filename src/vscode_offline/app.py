@@ -6,6 +6,7 @@ from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
 from vscode_offline.download import (
+    download_vscode_client,
     download_vscode_extensions,
     download_vscode_server,
 )
@@ -59,7 +60,7 @@ def cmd_install_server(args: Namespace) -> None:
 
     install_vscode_server(
         args.commit,
-        cli_installer=args.installer / f"server-{args.commit}",
+        server_installer=args.installer / f"server-{args.commit}",
         vscode_cli_bin=get_vscode_cli_bin(args.commit),
         platform=host_platform,
     )
@@ -85,6 +86,26 @@ def cmd_install_extensions(args: Namespace) -> None:
         os.fspath("code"),
         vsix_dir=args.installer / "extensions",
         platform=host_platform,
+    )
+
+
+def cmd_download_client(args: Namespace) -> None:
+    if args.commit is None:
+        args.commit = get_vscode_commit_from_code_version()
+        if args.commit is None:
+            logger.info(
+                "Cannot determine commit from `code --version`, please specify --commit manually."
+            )
+            raise ValueError("Please specify --commit when installing.")
+
+    download_vscode_client(
+        args.commit,
+        output=args.installer / f"client-{args.commit}",
+        target_platform=args.target_platform,
+    )
+    extensions_config = Path(args.extensions_config).expanduser()
+    download_vscode_extensions(
+        extensions_config, args.target_platform, args.installer / "extensions"
     )
 
 
@@ -167,6 +188,30 @@ def make_argparser() -> ArgumentParser:
         type=str,
         default="code",
         help="Path to the `code` binary.",
+    )
+
+    download_client_parser = subparsers.add_parser(
+        "download-client",
+        help="Download VS Code and extensions",
+        parents=[parent_parser],
+    )
+    download_client_parser.set_defaults(func=cmd_download_client)
+    download_client_parser.add_argument(
+        "--commit",
+        type=str,
+        help="The commit hash of the VS Code to download, must match the version of the VSCode client.",
+    )
+    download_client_parser.add_argument(
+        "--target-platform",
+        type=str,
+        required=True,
+        help="The target platform of the VS Code to download.",
+    )
+    download_client_parser.add_argument(
+        "--extensions-config",
+        type=Path,
+        default=get_vscode_extensions_config(),
+        help="Path to the extensions configuration file. Will search for extensions to download.",
     )
 
     return parser

@@ -4,6 +4,8 @@ import os
 import shutil
 import subprocess
 import sys
+from collections.abc import Mapping
+from email.parser import HeaderParser
 from pathlib import Path
 
 from vscode_offline.loggers import logger
@@ -76,17 +78,19 @@ def get_vscode_commit_from_code_version() -> str | None:
 
 
 # Mapping from target platform to CLI OS and architecture used in download URLs
-_cli_os_arch_mapping = {
+_cli_platform_mapping = {
     "linux-x64": "alpine-x64",
     "linux-arm64": "alpine-arm64",
+    "linux-armhf": "linux-arm64",
+    "win32-x64": "win32-x64",
 }
 
 
-def get_cli_os_arch(platform: str) -> str:
+def get_cli_platform(platform: str) -> str:
     """Get the CLI OS and architecture for the given target platform."""
-    if platform not in _cli_os_arch_mapping:
+    if platform not in _cli_platform_mapping:
         raise ValueError(f"Unsupported target platform: {platform}")
-    return _cli_os_arch_mapping[platform]
+    return _cli_platform_mapping[platform]
 
 
 def get_host_platform() -> str:
@@ -104,3 +108,16 @@ def get_host_platform() -> str:
         elif machine in ("aarch64", "arm64"):
             return "linux-arm64"
     raise ValueError(f"Unsupported host platform: {osname}-{machine}")
+
+
+def get_filename_from_header(headers: Mapping[str, str]) -> str | None:
+    content_disposition = headers.get("Content-Disposition")
+    header_str = ""
+    if content_type := headers.get("Content-Type"):
+        header_str += f"Content-Type: {content_type}\n"
+    if content_disposition := headers.get("Content-Disposition"):
+        header_str += f"Content-Disposition: {content_disposition}\n"
+    if not header_str:
+        return None
+    header = HeaderParser().parsestr(header_str)
+    return header.get_filename()
