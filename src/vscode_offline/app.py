@@ -8,7 +8,7 @@ from vscode_offline.download import download_vscode_extensions, download_vscode_
 from vscode_offline.install import install_vscode_extensions, install_vscode_server
 from vscode_offline.loggers import logger
 from vscode_offline.utils import (
-    get_target_platform_from_installer,
+    get_host_platform,
     get_vscode_cli_bin,
     get_vscode_commit_from_code_version,
     get_vscode_commit_from_installer,
@@ -38,29 +38,23 @@ def download(args: Namespace) -> None:
 
 
 def install(args: Namespace) -> None:
-    if args.commit is None:
-        args.commit = get_vscode_commit_from_installer(args.installer)
-        if args.commit is None:
-            logger.info(
-                f"Cannot determine commit from `{args.installer}`, please specify --commit manually."
-            )
-            raise ValueError("Please specify --commit when installing.")
+    host_platform = get_host_platform()
 
-    if args.target_platform is None:
-        args.target_platform = get_target_platform_from_installer(
-            args.installer / f"cli-{args.commit}"
-        )
-        if args.target_platform is None:
-            logger.info(
-                f"Cannot determine target platform from `{args.installer}`, please specify --target-platform manually."
+    if args.commit is None:
+        try:
+            args.commit = get_vscode_commit_from_installer(
+                args.installer, host_platform
             )
-            raise ValueError("Please specify --target-platform when installing.")
+        except Exception as e:
+            raise ValueError(
+                f"{e}, please specify `--commit` when installing."
+            ) from None
 
     install_vscode_server(
         args.commit,
         cli_installer=args.installer / f"cli-{args.commit}",
         vscode_cli_bin=get_vscode_cli_bin(args.commit),
-        target_platform=args.target_platform,
+        platform=host_platform,
     )
     vscode_server_home = get_vscode_server_home(args.commit)
     install_vscode_extensions(
@@ -116,11 +110,6 @@ def make_argparser() -> ArgumentParser:
         "--commit",
         type=str,
         help="The commit hash of the VSCode server to install.",
-    )
-    install_parser.add_argument(
-        "--target-platform",
-        type=str,
-        help="The target platform of the VSCode server to install.",
     )
 
     return parser

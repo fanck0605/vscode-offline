@@ -6,7 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from vscode_offline.loggers import logger
-from vscode_offline.utils import get_cli_os, get_vscode_server_home
+from vscode_offline.utils import get_cli_os_arch, get_vscode_server_home
 
 # These extensions are excluded because they are not needed in a VSCode server.
 EXCLUDE_EXTENSIONS = {
@@ -42,9 +42,9 @@ def install_vscode_server(
     commit: str,
     cli_installer: str,
     vscode_cli_bin: os.PathLike[str],
-    target_platform: str,
+    platform: str,
 ) -> None:
-    cli_os = get_cli_os(target_platform)
+    cli_os = get_cli_os_arch(platform)
     cli_os_ = cli_os.replace("-", "_")
 
     vscode_cli_tarball = Path(cli_installer) / f"vscode_cli_{cli_os_}_cli.tar.gz"
@@ -57,9 +57,7 @@ def install_vscode_server(
         os.rename(tmpfile, vscode_cli_bin)
     logger.info(f"Extracted vscode_cli_{cli_os_}_cli.tar.gz to {vscode_cli_bin}")
 
-    vscode_server_tarball = (
-        Path(cli_installer) / f"vscode-server-{target_platform}.tar.gz"
-    )
+    vscode_server_tarball = Path(cli_installer) / f"vscode-server-{platform}.tar.gz"
     vscode_server_home = get_vscode_server_home(commit)
     os.makedirs(vscode_server_home, exist_ok=True)
     subprocess.check_call(
@@ -72,6 +70,4 @@ def install_vscode_server(
             "--strip-components=1",
         ]
     )
-    logger.info(
-        f"Extracted vscode-server-{target_platform}.tar.gz to {vscode_server_home}"
-    )
+    logger.info(f"Extracted vscode-server-{platform}.tar.gz to {vscode_server_home}")

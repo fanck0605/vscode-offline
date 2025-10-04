@@ -7,7 +7,7 @@ from urllib.error import HTTPError
 from urllib.request import urlopen
 
 from vscode_offline.loggers import logger
-from vscode_offline.utils import get_cli_os
+from vscode_offline.utils import get_cli_os_arch
 
 
 def _download_file(url: str, filename: str) -> None:
@@ -95,13 +95,19 @@ def download_vscode_server(
     output: str,
     target_platform: str,
 ) -> None:
+    """Download VSCode server and CLI for the given commit and target platform.
+
+    See Also:
+        https://www.cnblogs.com/michaelcjl/p/18262833
+        https://blog.csdn.net/qq_69668825/article/details/144224417
+    """
     os.makedirs(output, exist_ok=True)
     download_file(
         f"https://update.code.visualstudio.com/commit:{commit}/server-{target_platform}/stable",
         f"{output}/vscode-server-{target_platform}.tar.gz",
     )
     logger.info("============================================")
-    cli_os = get_cli_os(target_platform)
+    cli_os = get_cli_os_arch(target_platform)
     cli_os_ = cli_os.replace("-", "_")
     download_file(
         f"https://update.code.visualstudio.com/commit:{commit}/cli-{cli_os}/stable",
