@@ -4,12 +4,11 @@ import os
 import shutil
 import subprocess
 import sys
-from argparse import ArgumentTypeError
 from collections.abc import Mapping
 from collections.abc import Set as AbstractSet
 from email.parser import HeaderParser
 from pathlib import Path
-from typing import Final
+from typing import Collection, Final
 
 from vscode_offline.loggers import logger
 
@@ -84,11 +83,9 @@ def get_default_code_version() -> str | None:
 # Mapping from other platforms to VS Code client platform used in download URLs
 _client_platform_mapping: Final[Mapping[str, str]] = {
     "linux-x64": "linux-x64",
-    "alpine-x64": "linux-x64",
     "linux-deb-x64": "linux-deb-x64",
     "linux-rpm-x64": "linux-rpm-x64",
     "linux-arm64": "linux-arm64",
-    "alpine-arm64": "linux-arm64",
     "linux-deb-arm64": "linux-deb-arm64",
     "linux-rpm-arm64": "linux-rpm-arm64",
     "linux-armhf": "linux-armhf",
@@ -100,19 +97,17 @@ _client_platform_mapping: Final[Mapping[str, str]] = {
     "win32-arm64": "win32-arm64",
     "win32-arm64-user": "win32-arm64-user",
     "win32-arm64-archive": "win32-arm64-archive",
-    "darwin": "darwin",
     "darwin-x64": "darwin",
     "darwin-arm64": "darwin-arm64",
 }
 
-# Mapping from other platforms to VS Code server platform used in download URLs
+
+# Mapping from other platforms to VS Code Server platform used in download URLs
 _server_platform_mapping: Final[Mapping[str, str]] = {
     "linux-x64": "linux-x64",
-    "alpine-x64": "linux-x64",
     "linux-deb-x64": "linux-x64",
     "linux-rpm-x64": "linux-x64",
     "linux-arm64": "linux-arm64",
-    "alpine-arm64": "linux-arm64",
     "linux-deb-arm64": "linux-arm64",
     "linux-rpm-arm64": "linux-arm64",
     "linux-armhf": "linux-armhf",
@@ -124,7 +119,6 @@ _server_platform_mapping: Final[Mapping[str, str]] = {
     "win32-arm64": "win32-arm64",
     "win32-arm64-user": "win32-arm64",
     "win32-arm64-archive": "win32-arm64",
-    "darwin": "darwin",
     "darwin-x64": "darwin",
     "darwin-arm64": "darwin-arm64",
 }
@@ -133,11 +127,9 @@ _server_platform_mapping: Final[Mapping[str, str]] = {
 # Mapping from other platforms to VS Code CLI platform used in download URLs
 _cli_platform_mapping: Final[Mapping[str, str]] = {
     "linux-x64": "alpine-x64",
-    "alpine-x64": "alpine-x64",
     "linux-deb-x64": "alpine-x64",
     "linux-rpm-x64": "alpine-x64",
     "linux-arm64": "alpine-arm64",
-    "alpine-arm64": "alpine-arm64",
     "linux-deb-arm64": "alpine-arm64",
     "linux-rpm-arm64": "alpine-arm64",
     "linux-armhf": "linux-armhf",
@@ -149,7 +141,6 @@ _cli_platform_mapping: Final[Mapping[str, str]] = {
     "win32-arm64": "win32-arm64",
     "win32-arm64-user": "win32-arm64",
     "win32-arm64-archive": "win32-arm64",
-    "darwin": "darwin-x64",
     "darwin-x64": "darwin-x64",
     "darwin-arm64": "darwin-arm64",
 }
@@ -158,11 +149,9 @@ _cli_platform_mapping: Final[Mapping[str, str]] = {
 # Mapping from other platforms to extension target platform used in download URLs
 _extension_platform_mapping: Final[Mapping[str, str]] = {
     "linux-x64": "linux-x64",
-    "alpine-x64": "linux-x64",
     "linux-deb-x64": "linux-x64",
     "linux-rpm-x64": "linux-x64",
     "linux-arm64": "linux-arm64",
-    "alpine-arm64": "linux-arm64",
     "linux-deb-arm64": "linux-arm64",
     "linux-rpm-arm64": "linux-arm64",
     "linux-armhf": "linux-armhf",
@@ -174,42 +163,62 @@ _extension_platform_mapping: Final[Mapping[str, str]] = {
     "win32-arm64": "win32-arm64",
     "win32-arm64-user": "win32-arm64",
     "win32-arm64-archive": "win32-arm64",
-    "darwin": "darwin-x64",
     "darwin-x64": "darwin-x64",
     "darwin-arm64": "darwin-arm64",
 }
 
+CLIENT_PLATFORMS: Final[Collection[str]] = {
+    "linux-x64": None,
+    "linux-deb-x64": None,
+    "linux-rpm-x64": None,
+    "linux-arm64": None,
+    "linux-deb-arm64": None,
+    "linux-rpm-arm64": None,
+    "linux-armhf": None,
+    "linux-deb-armhf": None,
+    "linux-rpm-armhf": None,
+    "win32-x64": None,
+    "win32-x64-user": None,
+    "win32-x64-archive": None,
+    "win32-arm64": None,
+    "win32-arm64-user": None,
+    "win32-arm64-archive": None,
+    "darwin-x64": None,
+    "darwin-arm64": None,
+}
 
-def get_client_platform(platform: str) -> str:
-    """Get the VS Code platform for the given platform."""
-    return _client_platform_mapping.get(platform, platform)
+
+SERVER_PLATFORMS: Final[Collection[str]] = {
+    "linux-x64": None,
+    "linux-arm64": None,
+    "linux-armhf": None,
+    "win32-x64": None,
+    "win32-arm64": None,
+    "darwin-x64": None,
+    "darwin-arm64": None,
+}
 
 
-def get_server_platform(platform: str) -> str:
-    """Get the VS Code server platform for the given platform."""
-    return _server_platform_mapping.get(platform, platform)
-
-
-def get_cli_platform(platform: str) -> str:
-    """Get the VS Code CLI platform for the given platform."""
-    return _cli_platform_mapping.get(platform, platform)
-
-
-def get_extension_platform(platform: str) -> str:
-    """Get the VS Code extension target platform for the given platform."""
-    return _extension_platform_mapping.get(platform, platform)
-
+EXTENSION_PLATFORMS: Final[Collection[str]] = {
+    "linux-x64": None,
+    "linux-arm64": None,
+    "linux-armhf": None,
+    "win32-x64": None,
+    "win32-arm64": None,
+    "darwin-x64": None,
+    "darwin-arm64": None,
+}
 
 _all_platforms: Final[AbstractSet[str]] = {
-    *_client_platform_mapping.keys(),
-    *_client_platform_mapping.values(),
-    *_server_platform_mapping.keys(),
-    *_server_platform_mapping.values(),
-    *_cli_platform_mapping.keys(),
-    *_cli_platform_mapping.values(),
-    *_extension_platform_mapping.keys(),
-    *_extension_platform_mapping.values(),
+    *CLIENT_PLATFORMS,
+    *SERVER_PLATFORMS,
+    *EXTENSION_PLATFORMS,
 }
+
+
+assert set(SERVER_PLATFORMS).issubset(CLIENT_PLATFORMS)
+assert set(EXTENSION_PLATFORMS).issubset(CLIENT_PLATFORMS)
+assert SERVER_PLATFORMS == EXTENSION_PLATFORMS
 
 
 assert (
@@ -221,11 +230,24 @@ assert (
 )
 
 
-def validate_platform(platform: str) -> str:
-    """Check if the given platform is a valid VS Code platform."""
-    if platform in _all_platforms:
-        return platform
-    raise ArgumentTypeError(f"Unsupported platform: {platform!r}")
+def get_client_platform(platform: str) -> str:
+    """Get the VS Code platform for the given platform."""
+    return _client_platform_mapping.get(platform, platform)
+
+
+def get_server_platform(platform: str) -> str:
+    """Get the VS Code Server platform for the given platform."""
+    return _server_platform_mapping.get(platform, platform)
+
+
+def get_cli_platform(platform: str) -> str:
+    """Get the VS Code CLI platform for the given platform."""
+    return _cli_platform_mapping.get(platform, platform)
+
+
+def get_extension_platform(platform: str) -> str:
+    """Get the VS Code extension target platform for the given platform."""
+    return _extension_platform_mapping.get(platform, platform)
 
 
 def get_host_platform() -> str:
