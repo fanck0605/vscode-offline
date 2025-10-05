@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import os
-from collections.abc import Sequence
+from collections.abc import Set as AbstractSet
 from gzip import GzipFile
 from io import DEFAULT_BUFFER_SIZE
 from pathlib import Path
@@ -10,10 +10,10 @@ from urllib.error import HTTPError
 from urllib.request import urlopen
 
 from vscode_offline.loggers import logger
-from vscode_offline.utils import get_cli_platform, get_filename_from_headers
+from vscode_offline.utils import extract_filename_from_headers, get_cli_platform
 
 
-def _download_file(
+def _download_file_once(
     url: str,
     directory: str | os.PathLike[str],
     filename: str | None = None,
@@ -31,12 +31,12 @@ def _download_file(
         if filename:
             file_path = Path(directory).joinpath(filename)
         else:
-            filename = get_filename_from_headers(resp.headers)
+            filename = extract_filename_from_headers(resp.headers)
             if not filename:
                 raise ValueError(
-                    "Cannot get filename from HTTP headers, please specify argument `filename`."
+                    "Cannot extract filename from HTTP headers, please specify argument `filename`."
                 )
-            logger.info(f"Get filename `{filename}` from HTTP headers.")
+            logger.info(f"Extracted filename {filename} from HTTP headers.")
             file_path = Path(directory).joinpath(filename)
             if file_path.exists():
                 logger.info(f"File {file_path} already exists, skipping download.")
@@ -58,7 +58,7 @@ def _download_file(
         return file_path
 
 
-def download_file(
+def _download_file(
     url: str,
     directory: str | os.PathLike[str],
     filename: str | None = None,
@@ -70,35 +70,47 @@ def download_file(
             return
 
     logger.info(f"Downloading {url} ...")
-    for i in range(3):
+    attempt_num = 0
+    while True:
         try:
-            _download_file(url, directory, filename)
+            _download_file_once(url, directory, filename)
             break
         except Exception as e:
             if isinstance(e, HTTPError) and e.code == 404:
                 raise
-            logger.info(f"Attempt {i + 1} times failed: {e}")
+            attempt_num += 1
+            if attempt_num >= 3:
+                raise
+            logger.info(f"Attempt {attempt_num} times failed: {e}")
 
 
-def download_extension(
+def _download_extension(
     publisher: str,
     name: str,
     version: str,
     platform: str | None = None,
-    output: str = ".",
+    output: str | os.PathLike[str] = ".",
 ) -> None:
     url = f"https://marketplace.visualstudio.com/_apis/public/gallery/publishers/{publisher}/vsextensions/{name}/{version}/vspackage"
     if platform:
         url = f"{url}?targetPlatform={platform}"
     filename = f"{publisher}.{name}-{version}{f'@{platform}' if platform else ''}.vsix"
-    download_file(url, output, filename)
+    _download_file(url, output, filename)
 
 
 def download_vscode_extensions(
     extensions_config: os.PathLike[str],
-    target_platforms: Sequence[str],
-    output: str = ".",
+    target_platforms: AbstractSet[str],
+    output: str | os.PathLike[str] = ".",
 ) -> None:
+    """Download VS Code extensions listed in the given extensions config file.
+
+    Args:
+        extensions_config: Path to the extensions config file, which is a JSON file
+            containing a list of extensions with their publisher, name, and version.
+        target_platforms: List of target platforms for which to download the extensions.
+        output: Directory to save the downloaded extensions.
+    """
     logger.info(f"Reading extensions config from {extensions_config}")
     with open(extensions_config) as fp:
         data = json.loads(fp.read())
@@ -112,7 +124,7 @@ def download_vscode_extensions(
         requires_fallback_download = False
         for target_platform in target_platforms:
             try:
-                download_extension(
+                _download_extension(
                     publisher, name, version, target_platform, output=output
                 )
             except HTTPError as e:
@@ -121,7 +133,7 @@ def download_vscode_extensions(
                     continue
                 raise
         if requires_fallback_download:
-            download_extension(publisher, name, version, output=output)
+            _download_extension(publisher, name, version, output=output)
 
 
 def _download_vscode(
@@ -135,7 +147,7 @@ def _download_vscode(
     # "VS CodeSetup-x64-1.104.3.exe" for windows VS Code,
     # "vscode-server-linux-x64.tar.gz" for linux VS Code Server,
     # "vscode_cli_alpine_x64_cli.tar.gz" for linux VS Code CLI.
-    download_file(
+    _download_file(
         f"https://update.code.visualstudio.com/{version}/{platform}/stable", output
     )
 

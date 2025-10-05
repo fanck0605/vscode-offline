@@ -20,7 +20,7 @@ pip install -U vscode-offline
 （2）执行如下命令，下载 VS Code 安装包，和目前安装的所有的插件
 
 ```shell
-vscode-offline download-all --installer ./vscode-offline-installer
+vscode-offline download-all --client-platform win32-x64 --server-platform linux-x64
 ```
 
 （3）复制 `./vscode-offline-installer` 到内网 Windows 机器，安装 `client-<version>` 下的 VS Code，然后执行如下命令安装所有插件
@@ -47,6 +47,58 @@ vscode-offline download-all --code-version 1.104.3
 
 ```shell
 vscode-offline download-all --code-version commit:385651c938df8a906869babee516bffd0ddb9829
+```
+
+
+## 文件下载地址
+
+Platform 映射关系:
+
+| VS Code             | VS Code Server      | VS Code CLI      | VS Code Extension |
+| ------------------- | ------------------- | ---------------- | ----------------- |
+| win32-x64           | server-win32-x64    | cli-win32-x64    | win32-x64         |
+| win32-x64-user      | server-win32-x64    | cli-win32-x64    | win32-x64         |
+| win32-x64-archive   | server-win32-x64    | cli-win32-x64    | win32-x64         |
+| win32-arm64         | server-win32-arm64  | cli-win32-arm64  | win32-arm64       |
+| win32-arm64-user    | server-win32-arm64  | cli-win32-arm64  | win32-arm64       |
+| win32-arm64-archive | server-win32-arm64  | cli-win32-arm64  | win32-arm64       |
+| linux-x64           | server-linux-x64    | cli-alpine-x64   | linux-x64         |
+| linux-deb-x64       | server-linux-x64    | cli-alpine-x64   | linux-x64         |
+| linux-rpm-x64       | server-linux-x64    | cli-alpine-x64   | linux-x64         |
+| linux-arm64         | server-linux-arm64  | cli-alpine-arm64 | linux-arm64       |
+| linux-deb-arm64     | server-linux-arm64  | cli-alpine-arm64 | linux-arm64       |
+| linux-rpm-arm64     | server-linux-arm64  | cli-alpine-arm64 | linux-arm64       |
+| linux-armhf         | server-linux-armhf  | cli-linux-armhf  | linux-armhf       |
+| linux-deb-armhf     | server-linux-armhf  | cli-linux-armhf  | linux-armhf       |
+| linux-rpm-armhf     | server-linux-armhf  | cli-linux-armhf  | linux-armhf       |
+| darwin              | server-darwin       | cli-darwin-x64   | darwin-x64        |
+| darwin-arm64        | server-darwin-arm64 | cli-darwin-arm64 | darwin-arm64      |
+
+VS Code / VS Code Server / VS Code CLI  下载地址格式：
+
+```shell
+curl -O https://update.code.visualstudio.com/<version>/<platform>/stable
+curl -O https://update.code.visualstudio.com/commit:<commit>/<platform>/stable
+```
+
+比如：
+
+```shell
+curl -O https://update.code.visualstudio.com/1.104.3/cli-alpine-x64/stable
+curl -O https://update.code.visualstudio.com/commit:385651c938df8a906869babee516bffd0ddb9829/win32-x64/stable
+```
+
+
+VS Code Extension 下载地址格式：
+
+```shell
+curl -O https://marketplace.visualstudio.com/_apis/public/gallery/publishers/<publisher>/vsextensions/<extension>/<version>/vspackage?targetPlatform=<platform>
+```
+
+比如：
+
+```shell
+curl -O https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-python/vsextensions/python/2025.14.0/vspackage?targetPlatform=linux-x64
 ```
 
 ## 贡献
