@@ -37,7 +37,7 @@ def cmd_download_server(args: Namespace) -> None:
 
     download_vscode_server(
         args.code_version,
-        output=args.installer / f"server-{args.code_version.replace(':', '-')}",
+        output=args.installer / args.code_version.replace(":", "-"),
         platform=get_server_platform(args.platform),
     )
     extensions_config = Path(args.extensions_config).expanduser()
@@ -63,7 +63,7 @@ def cmd_install_server(args: Namespace) -> None:
             ) from None
 
     vscode_server_home = install_vscode_server(
-        server_installer=args.installer / f"server-{args.code_version}",
+        server_installer=args.installer / args.code_version.replace(":", "-"),
         platform=get_server_platform(host_platform),
     )
     install_vscode_extensions(
@@ -104,7 +104,7 @@ def cmd_download_client(args: Namespace) -> None:
 
     download_vscode_client(
         args.code_version,
-        output=args.installer / f"client-{args.code_version.replace(':', '-')}",
+        output=args.installer / args.code_version.replace(":", "-"),
         platform=get_client_platform(args.platform),
     )
     extensions_config = Path(args.extensions_config).expanduser()
@@ -127,12 +127,12 @@ def cmd_download_all(args: Namespace) -> None:
 
     download_vscode_server(
         args.code_version,
-        output=args.installer / f"server-{args.code_version.replace(':', '-')}",
+        output=args.installer / args.code_version.replace(":", "-"),
         platform=get_server_platform(args.server_platform),
     )
     download_vscode_client(
         args.code_version,
-        output=args.installer / f"client-{args.code_version.replace(':', '-')}",
+        output=args.installer / args.code_version.replace(":", "-"),
         platform=get_client_platform(args.client_platform),
     )
     extensions_config = Path(args.extensions_config).expanduser()

@@ -38,9 +38,7 @@ def get_vscode_extensions_config() -> os.PathLike[str]:
 def get_vscode_version_from_server_installer(
     installer: os.PathLike[str], platform: str
 ) -> str:
-    directories = list(
-        Path(installer).glob(f"server-*/vscode-server-{platform}.tar.gz")
-    )
+    directories = list(Path(installer).glob(f"*/vscode-server-{platform}.tar.gz"))
     if len(directories) > 1:
         raise ValueError(
             f"Multiple matching installers found in {installer} for platform {platform}"
@@ -50,9 +48,9 @@ def get_vscode_version_from_server_installer(
             f"No matching installer found in {installer} for platform {platform}"
         )
 
-    version = directories[0].parent.name[len("server-") :]
+    version = directories[0].parent.name
     logger.info(f"Getting version from {platform} installer: {version}")
-    return version
+    return version.replace("commit-", "commit:")
 
 
 def get_default_code_version() -> str | None:

@@ -28,7 +28,7 @@ pip install -U vscode-offline
 vscode-offline download-all --client-platform win32-x64 --server-platform linux-x64
 ```
 
-（3）复制 `./vscode-offline-installer` 到内网 Windows 机器，安装 `client-<version>` 下的 VS Code，然后执行如下命令安装所有插件
+（3）复制 `./vscode-offline-installer` 到内网 Windows 机器，安装 `./vscode-offline-installer/<version>` 下的 VS Code，然后执行如下命令安装所有插件
 
 ```shell
 vscode-offline install-extensions --installer ./vscode-offline-installer

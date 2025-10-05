@@ -4,13 +4,14 @@ import json
 import os
 from collections.abc import Set as AbstractSet
 from gzip import GzipFile
-from io import DEFAULT_BUFFER_SIZE
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import urlopen
 
 from vscode_offline.loggers import logger
 from vscode_offline.utils import extract_filename_from_headers, get_cli_platform
+
+_DOWNLOAD_CHUNK_SIZE = 4 * 1024 * 1024  # 4 MiB
 
 
 def _download_file_once(
@@ -45,7 +46,7 @@ def _download_file_once(
         tmp_file_path = Path(directory).joinpath(f"{filename}.tmp")
         with reader, tmp_file_path.open("wb") as fp:
             while True:
-                chunk = reader.read(DEFAULT_BUFFER_SIZE)
+                chunk = reader.read(_DOWNLOAD_CHUNK_SIZE)
                 if not chunk:
                     break
                 fp.write(chunk)
