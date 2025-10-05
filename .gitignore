@@ -10,5 +10,8 @@ wheels/
 # Virtual environments
 .venv
 
+# Hatch VCS version file
+/src/vscode_offline/_version.py
+
 # VS Code offline installer directory
 vscode-offline-installer/

@@ -1,6 +1,6 @@
 # vscode-offline
 
-vscode-offline 主要用于在无网环境下安装 VS Code Server，方便使用 *Remote - SSH* 插件进行远程开发。
+vscode-offline 主要用于在无网环境下安装 VS Code 和 VS Code Server，方便使用 *Remote - SSH* 插件进行远程开发。
 
 ## 安装
 
@@ -11,7 +11,7 @@ pip install -U vscode-offline
 ## 优势
 
 1. 自动识别并下载所有 `.vsix` 文件（包括间接依赖）
-2. 一键安装 VS Code Server 以及所有插件
+2. 一键安装 VS Code Server 以及其所有插件
 
 ## VS Code 离线安装
 
@@ -52,6 +52,29 @@ vscode-offline download-all --code-version commit:385651c938df8a906869babee516bf
 
 ## 文件下载地址
 
+如果你不想使用 `vscode-offline`，也可以手动下载对应的文件。
+
+VS Code / VS Code Server / VS Code CLI  下载地址格式：
+
+```shell
+curl -O https://update.code.visualstudio.com/<version>/<platform>/stable
+curl -O https://update.code.visualstudio.com/commit:<commit>/<platform>/stable
+
+# 比如
+curl -O https://update.code.visualstudio.com/1.104.3/cli-alpine-x64/stable
+curl -O https://update.code.visualstudio.com/commit:385651c938df8a906869babee516bffd0ddb9829/win32-x64/stable
+```
+
+
+VS Code Extension 下载地址格式：
+
+```shell
+curl -O https://marketplace.visualstudio.com/_apis/public/gallery/publishers/<publisher>/vsextensions/<extension>/<version>/vspackage?targetPlatform=<platform>
+
+# 比如
+curl -O https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-python/vsextensions/python/2025.14.0/vspackage?targetPlatform=linux-x64
+```
+
 Platform 映射关系:
 
 | VS Code             | VS Code Server      | VS Code CLI      | VS Code Extension |
@@ -74,32 +97,6 @@ Platform 映射关系:
 | darwin              | server-darwin       | cli-darwin-x64   | darwin-x64        |
 | darwin-arm64        | server-darwin-arm64 | cli-darwin-arm64 | darwin-arm64      |
 
-VS Code / VS Code Server / VS Code CLI  下载地址格式：
-
-```shell
-curl -O https://update.code.visualstudio.com/<version>/<platform>/stable
-curl -O https://update.code.visualstudio.com/commit:<commit>/<platform>/stable
-```
-
-比如：
-
-```shell
-curl -O https://update.code.visualstudio.com/1.104.3/cli-alpine-x64/stable
-curl -O https://update.code.visualstudio.com/commit:385651c938df8a906869babee516bffd0ddb9829/win32-x64/stable
-```
-
-
-VS Code Extension 下载地址格式：
-
-```shell
-curl -O https://marketplace.visualstudio.com/_apis/public/gallery/publishers/<publisher>/vsextensions/<extension>/<version>/vspackage?targetPlatform=<platform>
-```
-
-比如：
-
-```shell
-curl -O https://marketplace.visualstudio.com/_apis/public/gallery/publishers/ms-python/vsextensions/python/2025.14.0/vspackage?targetPlatform=linux-x64
-```
 
 ## 贡献
 

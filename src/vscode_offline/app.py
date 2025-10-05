@@ -4,6 +4,7 @@ import logging
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from vscode_offline._version import __version__
 from vscode_offline.download import (
     download_vscode_client,
     download_vscode_extensions,
@@ -145,6 +146,11 @@ def cmd_download_all(args: Namespace) -> None:
     )
 
 
+def cmd_version(args: Namespace) -> None:
+    # print version instead of logging
+    print(__version__)
+
+
 def make_argparser() -> ArgumentParser:
     parent_parser = ArgumentParser(add_help=False)
 
@@ -157,6 +163,12 @@ def make_argparser() -> ArgumentParser:
 
     parser = ArgumentParser()
     subparsers = parser.add_subparsers(required=True)
+
+    version_parser = subparsers.add_parser(
+        "version",
+        help="Show version information",
+    )
+    version_parser.set_defaults(func=cmd_version)
 
     download_server_parser = subparsers.add_parser(
         "download-server",

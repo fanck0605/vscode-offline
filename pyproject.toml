@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "vscode-offline"
 dynamic = ["version"]
-description = "Download and install VS Code Server for offline environments"
+description = "Download and install VS Code for offline environments"
 readme = "README.md"
 authors = [{ name = "Chuck Fan", email = "fanck0605@qq.com" }]
 requires-python = ">=3.9"
@@ -44,6 +44,9 @@ dev = [
 
 [tool.hatch.version]
 source = "vcs"
+
+[tool.hatch.build.hooks.vcs]
+version-file = "src/vscode_offline/_version.py"
 
 [tool.ruff.lint]
 select = [
