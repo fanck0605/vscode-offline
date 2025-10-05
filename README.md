@@ -1,12 +1,9 @@
 # vscode-offline
 
-[![Build Status](https://github.com/fanck0605/vscode-offline/workflows/Build/badge.svg)
-](https://github.com/fanck0605/vscode-offline/actions/workflows/build.yml)
+[![Build Status](https://github.com/fanck0605/vscode-offline/workflows/Build/badge.svg)](https://github.com/fanck0605/vscode-offline/actions/workflows/build.yml)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![PyPI Version](https://img.shields.io/pypi/v/vscode-offline)
-](https://pypi.org/project/vscode-offline/)
-[![License](https://img.shields.io/github/license/fanck0605/vscode-offline)
-](https://github.com/fanck0605/vscode-offline/blob/master/LICENSE)
+[![PyPI Version](https://img.shields.io/pypi/v/vscode-offline)](https://pypi.org/project/vscode-offline/)
+[![License](https://img.shields.io/github/license/fanck0605/vscode-offline)](https://github.com/fanck0605/vscode-offline/blob/master/LICENSE)
 
 **vscode-offline** 主要用于在无网环境下安装 VS Code 和 VS Code Server，方便使用 [Remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh) 插件进行远程开发。
 
