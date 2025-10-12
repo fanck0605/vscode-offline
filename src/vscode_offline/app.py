@@ -300,7 +300,7 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
     parser = make_argparser()
     args = parser.parse_args()
-    args.func(args)
+    args.command(args)
 
 
 if __name__ == "__main__":
